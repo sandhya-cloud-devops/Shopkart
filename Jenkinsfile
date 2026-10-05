@@ -13,33 +13,40 @@ pipeline {
             steps {
                 echo 'Validating ShopKart application'
                 sh 'test -f index.html'
+                sh 'test -f Dockerfile'
                 echo 'CI validation successful'
             }
         }
 
-        stage('Build') {
+        stage('Docker Build') {
             steps {
-                echo 'Building ShopKart application'
-                sh 'ls -la'
+                echo 'Building ShopKart Docker image'
+                sh 'docker build -t shopkart:1.0 .'
             }
         }
 
-        stage('Deploy') {
+        stage('Docker Deploy') {
             steps {
-                echo 'Deploying ShopKart to Nginx'
-                sh 'sudo cp index.html /var/www/html/index.html'
-                echo 'Deployment completed successfully'
+                echo 'Deploying ShopKart Docker container'
+
+                sh '''
+                    docker stop shopkart-container || true
+                    docker rm shopkart-container || true
+                    docker run -d --name shopkart-container -p 8081:80 shopkart:1.0
+                '''
+
+                echo 'ShopKart Docker deployment completed successfully'
             }
         }
     }
 
     post {
         success {
-            echo 'ShopKart CI/CD Pipeline completed successfully'
+            echo 'ShopKart Docker CI/CD Pipeline completed successfully'
         }
 
         failure {
-            echo 'ShopKart CI/CD Pipeline failed'
+            echo 'ShopKart Docker CI/CD Pipeline failed'
         }
     }
 }
